@@ -79,7 +79,70 @@ class Query:
         else:
             return result
 
+    def customers(self, business_id: str, page: int = 1, page_size: int = 20, list_only: bool = True, return_all: bool = True) -> list | dict:
+        """Query a list of customers for a business. If you are unsure if you have retrieved all items, set list_only=False for additional output.
+
+        :param business_id: the ID of the business to retrieve invoices for (use `WaveApps.query.businesses` to obtain it)
+        :param page: the page to return, defaults to 1
+        :param page_size: the size of each page, defaults to 20
+        :param list_only: return only the list of businesses from the entire output, defaults to True
+        :param return_all: query all pages based on 'page_size' (starting at 'page'), or return only the specified 'page'
+        :return: either the list of customers or the entire dict result, depending on 'list_only'
+        """
+        params = {
+            "businessId": f"{business_id}",
+            "page": page,
+            "pageSize": page_size
+        }
+
+        query = gql(f"""query($businessId: ID!, $page: Int!, $pageSize: Int!) {{
+          business(id: $businessId) {{
+            id
+            customers(page: $page, pageSize: $pageSize) {{
+              pageInfo {{
+                currentPage
+                totalPages
+                totalCount
+              }}
+              edges {{
+                node {{
+                  id
+                  name
+                  email
+                }}
+              }}
+            }}
+          }}
+        }}""")
+        result: dict = self.wave.client.execute(query, variable_values=params)
+
+        if return_all:
+            page_info: dict = result['business']['customers']['pageInfo']  # {'currentPage': int, 'totalPages': int, 'totalCount': int}
+            current_page = page_info['currentPage']
+            total_pages = page_info['totalPages']
+            while current_page < total_pages:
+                params['page'] += 1
+                additional_results = self.wave.client.execute(query, variable_values=params)
+                result['business']['customers']['edges'] += additional_results['business']['customers']['edges']
+                current_page = additional_results['business']['customers']['pageInfo']['currentPage']
+
+        if list_only:
+            filtered = result['business']['customers']['edges']
+            return filtered
+        else:
+            return result
+
     def invoices_by_customer(self, business_id: str, customer_id: str, page: int = 1, page_size: int = 40, list_only: bool = True, return_all: bool = True) -> list | dict:
+        """Query a list of invoices from a business for a specific customer. If you are unsure if you have retrieved all items, set list_only=False for additional output.
+
+        :param business_id: the ID of the business to retrieve invoices for (use `WaveApps.query.businesses` to obtain it)
+        :param customer_id: the ID of the customer to retrieve invoices for (use `WaveApps.query.customers` to obtain it)
+        :param page: the page to return, defaults to 1
+        :param page_size: the size of each page, defaults to 20
+        :param list_only: return only the list of businesses from the entire output, defaults to True
+        :param return_all: query all pages based on 'page_size' (starting at 'page'), or return only the specified 'page'
+        :return: either the list of businesses or the entire dict result, depending on 'list_only'
+        """
 
         params = {
             "businessId": f"{business_id}",
@@ -224,7 +287,7 @@ class Query:
         else:
             return result
 
-    def invoices(self, business_id: str, page: int = 1, page_size: int = 40, list_only=True) -> list | dict:
+    def invoices(self, business_id: str, page: int = 1, page_size: int = 20, list_only=True, return_all: bool = True) -> list | dict:
         """Query a list of invoices from a business. If you are unsure if you have retrieved all items, set list_only=False for additional output.
 
         :param business_id: the ID of the business to retrieve invoices for (use `WaveApps.query.businesses` to obtain it)
@@ -235,11 +298,10 @@ class Query:
         :type page_size: int, optional
         :param list_only: return only the list of businesses from the entire output, defaults to True
         :type list_only: bool, optional
+        :param return_all: query all pages based on 'page_size' (starting at 'page'), or return only the specified 'page'
         :return: either the list of businesses or the entire dict result, depending on 'list_only'
         :rtype: list | dict
         """
-
-        # TODO: fix the 'return_all' component
 
         params = {
             "businessId": f"{business_id}",
@@ -368,6 +430,17 @@ class Query:
             }}
         """)
         result: dict = self.wave.client.execute(query, variable_values=params)
+
+        if return_all:
+            page_info: dict = result['business']['invoices']['pageInfo']  # {'currentPage': int, 'totalPages': int, 'totalCount': int}
+            current_page = page_info['currentPage']
+            total_pages = page_info['totalPages']
+            while current_page < total_pages:
+                params['page'] += 1
+                additional_results = self.wave.client.execute(query, variable_values=params)
+                result['business']['invoices']['edges'] += additional_results['business']['invoices']['edges']
+                current_page = additional_results['business']['invoices']['pageInfo']['currentPage']
+
         if list_only:
             filtered = result['business']['invoices']['edges']
             return filtered
