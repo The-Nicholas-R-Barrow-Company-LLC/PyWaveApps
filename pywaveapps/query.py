@@ -2,6 +2,18 @@ from gql import gql
 
 
 class Query:
+
+    def __new__(cls, wave_connection, *args, **kwargs):
+        from . import _logger
+        _logger.warning("a Query instance should never be initialized manually and should only be initialized (automatically) within the __init__ method of the WaveApps object; PROCEED WITH CAUTION")
+        if not wave_connection:
+            error = "Query initialized without a WaveApps object"
+            _logger.error(error)
+            raise RuntimeError(error)
+        _logger.debug(f"creating new Query instance")
+        instance = super(Query, cls).__new__(cls, *args, **kwargs)
+        return instance
+
     def __init__(self, wave_connection) -> None:
         """
         The Query object should only be initialized from the WaveApps.__init__(...) method.
