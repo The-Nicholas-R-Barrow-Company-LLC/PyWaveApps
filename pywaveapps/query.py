@@ -5,7 +5,7 @@ class Query:
 
     def __new__(cls, wave_connection, *args, **kwargs):
         from . import _logger
-        _logger.warning("a Query instance should never be initialized manually and should only be initialized (automatically) within the __init__ method of the WaveApps object; PROCEED WITH CAUTION")
+        _logger.warning("a Query instance should never be initialized manually and should only be initialized (automatically) within the __init__ method of the WaveApps object")
         if not wave_connection:
             error = "Query initialized without a WaveApps object"
             _logger.error(error)
