@@ -5,6 +5,9 @@ from .query import Query
 from .mutation import Mutation
 
 
+__version__ = "1.0.0"
+
+
 class WaveApps:
     ENDPOINT = "https://gql.waveapps.com/graphql/public"
 
